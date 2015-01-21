@@ -1,14 +1,16 @@
 ---
 - hosts: app
   remote_user: deploy
+  gather_facts: false
 
   vars:
     - app_path: /data/tomcat7/webapps
 
   vars_prompt:
     - name: archive
-      prompt: "Path to WAR file"
-      default: ROOT.war
+      prompt: "Path to local WAR file (relative to playbook)"
+      default: ./ROOT.war
+      private: false
 
   tasks:
     - name: Upload WAR to application server
@@ -22,7 +24,7 @@
 
     - name: Remove old application files
       file:
-        name={{ app_path }}/{{ archive | regex_replace('\.(war|WAR)', '') }}
+        name={{ app_path }}/{{ archive | regex_replace('\.([Ww][Aa][Rr])', '') }}
         state=absent
 
     - name: Restart Tomcat

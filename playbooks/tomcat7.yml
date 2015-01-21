@@ -1,0 +1,29 @@
+---
+- hosts: app
+  remote_user: deploy
+
+  vars:
+    - app_path: /data/tomcat7/webapps
+
+  vars_prompt:
+    - name: archive
+      prompt: "Path to WAR file"
+      default: ROOT.war
+
+  tasks:
+    - name: Upload WAR to application server
+      copy:
+        src={{ archive }}
+        dest={{ app_path}}/{{ archive | basename }}
+        backup=true
+        owner=deploy
+        group=deploy
+        mode=0644
+
+    - name: Remove old application files
+      file:
+        name={{ app_path }}/{{ archive | regex_replace('\.(war|WAR)', '') }}
+        state=absent
+
+    - name: Restart Tomcat
+      command: sudo /etc/init.d/tomcat7 restart

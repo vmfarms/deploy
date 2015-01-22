@@ -61,6 +61,28 @@ An example inventory file for a small load-balanced application might look like:
 
 See the [playbooks](./playbooks) directory for deployment playbooks. We aim to provide playbooks for each of [our supported application stacks](http://vmfarms.com/our-platform/).
 
+## Variables
+
+The playbooks refer to a standard set of variables:
+
+* `app`
+
+    Application name (usually your domain). This corresponds to the main path under `/data/web` (e.g., `/data/web/example.org`).
+* `repo_url`
+
+    Remote Git repository URL.
+* `war_archive`
+
+    Path to Tomcat 7 WAR file.
+
+Add these variables to a `vars.yml` file in the same directory as the playbook. For example, `vars.yml` for a Django application might look like:
+
+```yaml
+# vars.yml
+app: example.org
+repo_url: git@github.com:example/example.git
+```
+
 ## Deploying your application
 
 To deploy your application, you would run:

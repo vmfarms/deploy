@@ -1,0 +1,107 @@
+- hosts: app
+  remote_user: deploy
+  gather_facts: false
+
+  vars:
+    web_root: /data/web
+    release_dirs:
+      - releases
+      - repo
+
+  vars_files:
+    - vars.yml
+
+  tasks:
+    - name: Create required directories
+      file:
+        path={{ web_root }}/{{ app }}/{{ item }}
+        owner=deploy
+        group=deploy
+        state=directory
+      with_items: release_dirs
+
+    - name: Check if default virtualenv exists
+      stat:
+        path=/data/virtualenv/default
+      register: virtualenv
+
+    - name: Remove default virtualenv
+      file:
+        path=/data/virtualenv/default
+        state=absent
+      when: virtualenv.stat.isdir is defined and virtualenv.stat.isdir
+
+    - name: Set repo path
+      set_fact: repo_path="{{ web_root }}/{{ app }}/repo"
+
+    - name: Checkout code
+      git:
+        repo={{ repo_url }}
+        dest={{ repo_path }}
+        bare=true
+        accept_hostkey=true
+
+    - name: Add origin
+      command: git remote add origin {{ repo_url }}
+        chdir={{ repo_path }}
+      register: origin
+      failed_when: origin.rc != 0 and origin.rc != 128
+      changed_when: origin.rc == 0 or origin.rc != 128
+
+    - name: Get current revision
+      command: git rev-parse HEAD
+        chdir={{ repo_path }}
+      register: revision
+
+    - name: Get release timestamp
+      command: date +'%Y%m%d%H%M%S'
+      register: timestamp
+
+    - name: Set release path
+      set_fact: release="{{ web_root }}/{{ app }}/releases/{{ timestamp.stdout }}"
+
+    - name: Create release directory
+      file:
+        path={{ release }}
+        owner=deploy
+        group=deploy
+        state=directory
+
+    - name: Deploy release
+      shell: git archive HEAD | tar -x -C {{ release }}
+        chdir={{ repo_path }}
+
+    - name: Place current revision file
+      lineinfile:
+        dest={{ release }}/REVISION
+        line="{{ revision.stdout }}"
+        create=true
+
+    - name: Rebuild virtualenv
+      pip:
+        requirements="{{ release }}/requirements.txt"
+        virtualenv=/data/virtualenv/{{ revision.stdout }}
+
+    - name: Run Django migrations
+      command: /data/virtualenv/{{ revision.stdout }}/bin/python manage.py migrate --noinput
+        chdir={{ release }}
+
+    - name: Collect static files
+      command: /data/virtualenv/{{ revision.stdout }}/bin/python manage.py collectstatic --noinput
+        chdir={{ release }}
+
+    - name: Link current release
+      file:
+        state=link
+        path=/data/web/{{ app }}/current
+        src={{ release }}
+
+    - name: Link current virtualenv
+      file:
+        state=link
+        path=/data/virtualenv/default
+        src=/data/virtualenv/{{ revision.stdout }}
+        force=true
+
+    - name: Restart Gunicorn
+      command: sudo supervisorctl restart gunicorn-{{ app }}

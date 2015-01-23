@@ -12,6 +12,10 @@
     - vars.yml
 
   tasks:
+    - name: Set release timestamp
+      command: date +'%Y%m%d%H%M%S'
+      register: timestamp
+
     - name: Create required directories
       file:
         path={{ web_root }}/{{ app }}/{{ item }}
@@ -25,10 +29,8 @@
         path=/data/virtualenv/default
       register: virtualenv
 
-    - name: Remove default virtualenv
-      file:
-        path=/data/virtualenv/default
-        state=absent
+    - name: Move default virtualenv out of the way
+      command: mv /data/virtualenv/default /data/virtualenv/default.{{ timestamp.stdout }}
       when: virtualenv.stat.isdir is defined and virtualenv.stat.isdir
 
     - name: Set repo path
@@ -52,10 +54,6 @@
       command: git rev-parse HEAD
         chdir={{ repo_path }}
       register: revision
-
-    - name: Get release timestamp
-      command: date +'%Y%m%d%H%M%S'
-      register: timestamp
 
     - name: Set release path
       set_fact: release="{{ web_root }}/{{ app }}/releases/{{ timestamp.stdout }}"

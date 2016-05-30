@@ -1,0 +1,9 @@
+---
+- name: restart application
+  command: sudo supervisorctl restart all
+
+- name: check application status
+  command: "curl -s -o /dev/null -w '%{http_code}' -H 'Host: www.example.org' http://localhost/status/"
+  register: status
+  until: status.stdout == '200'
+  retries: 30

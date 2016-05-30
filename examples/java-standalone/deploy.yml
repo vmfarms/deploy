@@ -1,0 +1,12 @@
+---
+- hosts: all
+  serial: 1
+  vars:
+    ansistrano_deploy_from: example.jar
+    ansistrano_deploy_to: /data/web/example.org
+    ansistrano_keep_releases: 5
+    ansistrano_deploy_via: copy
+    ansistrano_allow_anonymous_stats: false
+    ansistrano_after_symlink_tasks_file: "{{ playbook_dir }}/deploy/after-symlink.yml"
+  roles:
+    - role: carlosbuenosvinos.ansistrano-deploy

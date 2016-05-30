@@ -1,6 +1,6 @@
-# VM Farms deployment tools
+# VM Farms deployment examples
 
-This is a collection of Ansible playbooks help deploy your code to your [VM Farms](http://vmfarms.com/) infrastructure.
+This is a collection of [Ansistrano](https://github.com/ansistrano/deploy) examples to help deploy your code to your [VM Farms](http://vmfarms.com/) infrastructure.
 
 Ansible is a simple IT automation tool that features:
 
@@ -39,6 +39,12 @@ Because Ansible is agentless, your servers are already configured to use it for 
     $ git clone https://github.com/vmfarms/deploy.git
     ```
 
+3. Install [Ansistrano](https://github.com/ansistrano/deploy).
+
+    ```
+    $ ./bootstrap.sh
+    ```
+
 ## Inventory
 
 An [inventory](http://docs.ansible.com/intro_inventory.html) categorizes hosts into groups (e.g., `app`, `db`, `cache`). It uses a simple INI-style configuration format.
@@ -59,39 +65,17 @@ An example inventory file for a small load-balanced application might look like:
 
 ## Playbooks
 
-See the [playbooks](./playbooks) directory for deployment playbooks. We aim to provide playbooks for each of [our supported application stacks](http://vmfarms.com/our-platform/).
-
-## Variables
-
-The playbooks refer to a standard set of variables:
-
-* `app`
-
-    Application name (usually your domain). This corresponds to the main path under `/data/web` (e.g., `/data/web/example.org`).
-* `repo_url`
-
-    Remote Git repository URL.
-* `war_archive`
-
-    Path to Tomcat 7 WAR file.
-
-Add these variables to a `vars.yml` file in the same directory as the playbook. For example, `vars.yml` for a Django application might look like:
-
-```yaml
-# vars.yml
-app: example.org
-repo_url: git@github.com:example/example.git
-```
+See the [examples](./examples) directory for deployment playbooks. We aim to provide playbooks for each of [our supported application stacks](http://vmfarms.com/our-platform/).
 
 ## Deploying your application
 
 To deploy your application, you would run:
 
 ```
-$ ansible-playbook -i /path/to/inventory <playbook>.yml
+$ ansible-playbook -u deploy -i /path/to/inventory deploy.yml
 ```
 
-where `<playbook>` represents your application stack. The provided deployment playbooks will run against hosts in the `app` group.
+Ansible commands can be unwieldy. Refer to [`deploy.sh`](./deploy.sh) as an example of how to wrap this command.
 
 ## Contributing
 
